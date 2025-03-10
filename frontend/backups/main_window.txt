@@ -1,0 +1,93 @@
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QTextEdit
+from PyQt5.QtCore import QThread, pyqtSignal
+import requests
+from utils.logger import setup_logger
+from utils.device_scanner import scan_output_devices
+
+logger = setup_logger()
+
+
+class ScanThread(QThread):
+    """Thread to scan for devices without freezing the UI"""
+
+    scan_finished = pyqtSignal(list)  # Signal emitted when scanning is done
+
+    def run(self):
+        devices = scan_output_devices()  # Run device scan
+        self.scan_finished.emit(devices)  # Emit result back to UI
+
+
+class MainWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Flask + PyQt App")
+        self.init_ui()
+
+    def init_ui(self):
+        self.layout = QVBoxLayout()
+
+        # Home and API buttons
+        self.label = QLabel("Click the button to get the list of available output devices")
+        # self.button_home = QPushButton("Get Home Data")
+        # self.button_data = QPushButton("Get API Data")
+
+        # self.button_home.clicked.connect(self.get_home_data)
+        # self.button_data.clicked.connect(self.get_api_data)
+
+        # New Button for Getting Output Devices
+        self.device_button = QPushButton("Get Output Devices")
+        self.device_output = QTextEdit()
+        self.device_output.setReadOnly(True)
+
+        self.device_button.clicked.connect(self.get_output_devices)
+
+        self.layout.addWidget(self.label)
+        # self.layout.addWidget(self.button_home)
+        # self.layout.addWidget(self.button_data)
+        self.layout.addWidget(self.device_button)
+        self.layout.addWidget(self.device_output)
+        self.setLayout(self.layout)
+
+    def get_home_data(self):
+        """Fetches home API data"""
+        try:
+            response = requests.get("http://127.0.0.1:5000/home/")
+            response.raise_for_status()
+            data = response.json()
+            self.label.setText(data.get("message", "No message received"))
+        except requests.exceptions.RequestException as e:
+            self.label.setText("Error fetching home data")
+            logger.error(f"Home API Error: {e}")
+
+    def get_api_data(self):
+        """Fetches API data"""
+        try:
+            response = requests.get("http://127.0.0.1:5000/data/info")
+            response.raise_for_status()
+            data = response.json()
+            self.label.setText(
+                f"ID: {data.get('id', 'N/A')}, Name: {data.get('name', 'Unknown')}"
+            )
+        except requests.exceptions.RequestException as e:
+            self.label.setText("Error fetching API data")
+            logger.error(f"Data API Error: {e}")
+
+    def get_output_devices(self):
+        """Starts scanning for output devices in a separate thread"""
+        self.device_output.setText("Scanning for devices... Please wait.")
+        self.device_button.setEnabled(False)  # Disable button during scanning
+
+        # Start the scanning process in a separate thread
+        self.scan_thread = ScanThread()
+        self.scan_thread.scan_finished.connect(self.display_scan_results)
+        self.scan_thread.start()
+
+    def display_scan_results(self, devices):
+        """Updates UI after scanning is finished"""
+        if devices:
+            formatted_devices = "\n".join(devices)
+            self.device_output.setText(formatted_devices)
+        else:
+            self.device_output.setText("N/A")
+
+        self.device_button.setEnabled(True)  # Re-enable button

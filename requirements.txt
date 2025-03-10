@@ -1,0 +1,5 @@
+flask
+PyQt5
+requests
+zeroconf
+pyinstaller
