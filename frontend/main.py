@@ -1,16 +1,11 @@
-import sys
-from PyQt5.QtWidgets import QApplication
+# frontend/main.py (Corrected Version)
 from frontend.ui.main_window import MainWindow
+from PyQt5.QtWidgets import QApplication
 from utils.logger import setup_logger
 
 logger = setup_logger()
 
-if __name__ == "__main__":
-    try:
-        logger.info("Starting Truehear Application...")
-        app = QApplication(sys.argv)
-        window = MainWindow()
-        window.show()
-        sys.exit(app.exec_())
-    except Exception as e:
-        logger.critical(f"Truehear App Crashed: {e}")
+def create_main_window():
+    """Function to create and return the main window."""
+    window = MainWindow()
+    return window

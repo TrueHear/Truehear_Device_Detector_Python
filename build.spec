@@ -4,12 +4,13 @@ from PyInstaller.utils.hooks import collect_submodules
 hidden_imports = collect_submodules("backend")
 hidden_imports += collect_submodules("frontend")
 hidden_imports += collect_submodules("utils")
+hidden_imports += collect_submodules("zeroconf")  # <-- Add this line
 
 a = Analysis(
-    ["run.py"],  # Main entry point
+    ["run.py"],
     pathex=["."],
     hiddenimports=hidden_imports,
-    datas=[("backend/data/database.json", "backend")],  # Ensure data.json is included
+    datas=[("backend/data/database.json", "backend")],
     binaries=[],
     noarchive=False,
 )
@@ -25,5 +26,5 @@ exe = EXE(
     debug=False,
     strip=False,
     upx=True,
-    console=True,  # Set to False if you don't want a console window
+    console=True,
 )

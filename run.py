@@ -1,8 +1,8 @@
 import sys
-from frontend.main import MainWindow, QApplication
+from frontend.main import create_main_window
 import atexit
-from multiprocessing import Process
-from backend.server import app
+from multiprocessing import Process,freeze_support
+from backend.server import app as flask_app
 from PyQt5.QtWidgets import QApplication
 from utils.logger import setup_logger
 
@@ -14,7 +14,7 @@ def run_server():
     """Runs Flask server in a separate process"""
     try:
         logger.info("Starting Flask Server Process...")
-        app.run(port=5000, debug=False)
+        flask_app.run(port=5000, debug=False)
     except Exception as e:
         logger.critical(f"Flask Server Crashed: {e}")
 
@@ -30,6 +30,7 @@ def stop_server():
 
 
 if __name__ == "__main__":
+    freeze_support()
     try:
         # Start Flask Server in a separate process
         server_process = Process(target=run_server)
@@ -41,7 +42,7 @@ if __name__ == "__main__":
         # Start PyQt Application
         logger.info("Launching PyQt UI...")
         app = QApplication(sys.argv)
-        window = MainWindow()
+        window = create_main_window()
 
         # When user closes the window, stop the server
         window.destroyed.connect(stop_server)
